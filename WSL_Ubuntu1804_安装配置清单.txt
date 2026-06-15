@@ -1,0 +1,91 @@
+﻿========================================
+  WSL 乌班图 18.04 安装配置清单
+========================================
+
+--------
+第一步：启用 WSL
+--------
+
+以管理员身份打开 PowerShell，执行：
+
+    wsl --install
+
+完成后重启电脑。
+
+--------
+第二步：下载乌班图 18.04 根文件系统
+--------
+
+用国内清华镜像下载：
+
+    curl.exe -L -o "%USERPROFILE%\Downloads\ubuntu-base-18.04.5-base-amd64.tar.gz" `
+      "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.5-base-amd64.tar.gz"
+
+--------
+第三步：导入 WSL 实例
+--------
+
+    mkdir "%USERPROFILE%\wsl\Ubuntu-1804"
+    wsl --import Ubuntu-1804 "%USERPROFILE%\wsl\Ubuntu-1804" `
+      "%USERPROFILE%\Downloads\ubuntu-base-18.04.5-base-amd64.tar.gz" --version 2
+
+--------
+第四步：进入 WSL 并更新软件源
+--------
+
+    wsl -d Ubuntu-1804 -- apt update
+
+--------
+第五步：安装必要软件包
+--------
+
+    wsl -d Ubuntu-1804 -- apt install -y iputils-ping iproute2 openssh-client openssh-server haveged sshpass
+
+--------
+第六步：设置 SSH 允许 root 登录
+--------
+
+    wsl -d Ubuntu-1804 -- sed -i "s/^#\?PermitRootLogin.*/PermitRootLogin yes/" /etc/ssh/sshd_config
+    wsl -d Ubuntu-1804 -- sed -i "$ a UseDNS no" /etc/ssh/sshd_config
+    wsl -d Ubuntu-1804 -- sed -i "$ a GSSAPIAuthentication no" /etc/ssh/sshd_config
+
+--------
+第七步：设置开机自启（熵服务）
+--------
+
+    wsl -d Ubuntu-1804 -- bash -c "cat > /etc/wsl.conf << 'EOF'
+[boot]
+command = haveged 2>/dev/null
+EOF"
+
+--------
+第八步：设置 root 密码（可选）
+--------
+
+    wsl -d Ubuntu-1804 -- passwd
+
+输入两次密码即可。
+
+--------
+第九步：重启 WSL 使配置生效
+--------
+
+    wsl --shutdown
+    wsl -d Ubuntu-1804 -- hostname -I
+
+--------
+使用方式
+--------
+
+从 Windows 命令行 SSH 到局域网其他 Linux 设备：
+
+    wsl -d Ubuntu-1804 -- ssh 用户名@目标IP
+
+首次连接会有主机密钥确认，输入 yes 即可。
+然后输入密码登录。
+
+如果需要用脚本自动登录（不推荐明文密码），可装 sshpass：
+
+    wsl -d Ubuntu-1804 -- sshpass -p "密码" ssh 用户名@目标IP "要执行的命令"
+
+========================================
